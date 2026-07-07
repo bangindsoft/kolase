@@ -310,8 +310,9 @@
   </div>
 
   <p class="hint">
-    Klik kotak kosong untuk unggah foto. Klik foto yang sudah terisi untuk menggeser (drag) posisi
-    dan mengatur zoom. Semua proses berjalan di browser — foto tidak diunggah ke server mana pun.
+    Klik kotak kosong untuk unggah foto. Di foto yang sudah terisi: <b>drag</b> untuk geser posisi,
+    <b>scroll mouse</b> (di laptop/PC) atau <b>cubit dua jari / pinch</b> (di HP) langsung di atas foto untuk zoom in-out.
+    Klik sekali pada foto juga menampilkan slider zoom sebagai alternatif. Semua proses berjalan di browser — foto tidak diunggah ke server mana pun.
   </p>
 
   <input type="file" id="fileInput" accept="image/*">
@@ -476,6 +477,21 @@
 
   function attachDrag(div, slot, fw, fh){
     let dragging = false, lastX=0, lastY=0, moved=0;
+    let pinchStartDist = 0, pinchStartZoom = 1, pinching = false;
+
+    function syncZoomUI(){
+      if(activeSlot === slots.indexOf(slot)){
+        zoomRange.value = Math.round(slot.zoom*100);
+        zoomVal.textContent = zoomRange.value+'%';
+      }
+    }
+    function applyZoomDelta(factor){
+      slot.zoom = Math.max(1, Math.min(3, slot.zoom*factor));
+      const dpr = window.devicePixelRatio||1;
+      drawSlotToCanvas(slot, slot.ctx, fw*dpr, fh*dpr);
+      syncZoomUI();
+    }
+
     function down(x,y){ dragging = true; lastX=x; lastY=y; moved=0; }
     function move(x,y){
       if(!dragging) return;
@@ -494,16 +510,49 @@
     }
     function up(){
       dragging = false;
-      // If the user actually dragged (moved the photo), mark it so the
-      // click-to-toggle handler below doesn't undo it by deactivating the slot.
       if(moved > 4){ slot._justDragged = true; }
     }
     div.addEventListener('mousedown', e=>{ e.stopPropagation(); down(e.clientX, e.clientY); });
     window.addEventListener('mousemove', e=> move(e.clientX, e.clientY));
     window.addEventListener('mouseup', up);
-    div.addEventListener('touchstart', e=>{ e.stopPropagation(); const t=e.touches[0]; down(t.clientX,t.clientY); }, {passive:true});
-    div.addEventListener('touchmove', e=>{ const t=e.touches[0]; move(t.clientX,t.clientY); }, {passive:true});
-    div.addEventListener('touchend', up);
+
+    // scroll wheel = zoom, works immediately without needing to activate the slot first
+    div.addEventListener('wheel', e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      const factor = e.deltaY < 0 ? 1.08 : 0.93;
+      applyZoomDelta(factor);
+    }, {passive:false});
+
+    div.addEventListener('touchstart', e=>{
+      e.stopPropagation();
+      if(e.touches.length===2){
+        pinching = true; dragging = false;
+        const t0=e.touches[0], t1=e.touches[1];
+        pinchStartDist = Math.hypot(t1.clientX-t0.clientX, t1.clientY-t0.clientY);
+        pinchStartZoom = slot.zoom;
+      } else {
+        pinching = false;
+        const t=e.touches[0]; down(t.clientX,t.clientY);
+      }
+    }, {passive:true});
+    div.addEventListener('touchmove', e=>{
+      if(pinching && e.touches.length===2){
+        const t0=e.touches[0], t1=e.touches[1];
+        const dist = Math.hypot(t1.clientX-t0.clientX, t1.clientY-t0.clientY);
+        slot.zoom = Math.max(1, Math.min(3, pinchStartZoom * (dist/pinchStartDist)));
+        const dpr = window.devicePixelRatio||1;
+        drawSlotToCanvas(slot, slot.ctx, fw*dpr, fh*dpr);
+        syncZoomUI();
+        moved = 999; // treat as a drag so the click after release doesn't toggle the slot
+      } else {
+        const t=e.touches[0]; move(t.clientX,t.clientY);
+      }
+    }, {passive:true});
+    div.addEventListener('touchend', e=>{
+      if(pinching){ pinching = false; slot._justDragged = true; return; }
+      up();
+    });
   }
 
   let pendingSlot = -1;
