@@ -379,6 +379,16 @@
     });
   }
 
+  function clearAllSlots(){
+    const layout = LAYOUTS[currentLayoutIdx];
+    slots = layout.rects.map(r=>({
+      rect:r, img:null, pan:{x:.5,y:.5}, zoom:1, canvas:null, ctx:null
+    }));
+    activeSlot = -1;
+    zoomBar.classList.remove('show');
+    renderStage();
+  }
+
   function rebuildSlots(){
     const layout = LAYOUTS[currentLayoutIdx];
     const oldImages = slots.map(s=>s ? {img:s.img, pan:s.pan, zoom:s.zoom} : null);
@@ -589,7 +599,7 @@
   document.getElementById('gapRange').addEventListener('input', e=>{ gapPx=+e.target.value; renderStage(); });
   document.getElementById('radiusRange').addEventListener('input', e=>{ radiusPx=+e.target.value; renderStage(); });
   document.getElementById('bgColor').addEventListener('input', e=>{ bgColor=e.target.value; renderStage(); });
-  document.getElementById('resetBtn').addEventListener('click', ()=>{ rebuildSlots(); });
+  document.getElementById('resetBtn').addEventListener('click', ()=>{ clearAllSlots(); });
   window.addEventListener('resize', renderStage);
 
   document.getElementById('downloadBtn').addEventListener('click', ()=>{
