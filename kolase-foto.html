@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -439,6 +440,7 @@
       }
 
       div.onclick = ()=>{
+        if(slot._justDragged){ slot._justDragged = false; return; }
         if(!slot.img){
           pendingSlot = idx;
           fileInput.click();
@@ -473,12 +475,13 @@
   }
 
   function attachDrag(div, slot, fw, fh){
-    let dragging = false, lastX=0, lastY=0;
-    function down(x,y){ dragging = true; lastX=x; lastY=y; }
+    let dragging = false, lastX=0, lastY=0, moved=0;
+    function down(x,y){ dragging = true; lastX=x; lastY=y; moved=0; }
     function move(x,y){
       if(!dragging) return;
       const dx = x-lastX, dy = y-lastY;
       lastX=x; lastY=y;
+      moved += Math.abs(dx)+Math.abs(dy);
       const iw = slot.img.naturalWidth, ih = slot.img.naturalHeight;
       const baseScale = Math.max(fw/iw, fh/ih);
       const scale = baseScale*slot.zoom;
@@ -489,7 +492,12 @@
       const dpr = window.devicePixelRatio||1;
       drawSlotToCanvas(slot, slot.ctx, fw*dpr, fh*dpr);
     }
-    function up(){ dragging = false; }
+    function up(){
+      dragging = false;
+      // If the user actually dragged (moved the photo), mark it so the
+      // click-to-toggle handler below doesn't undo it by deactivating the slot.
+      if(moved > 4){ slot._justDragged = true; }
+    }
     div.addEventListener('mousedown', e=>{ e.stopPropagation(); down(e.clientX, e.clientY); });
     window.addEventListener('mousemove', e=> move(e.clientX, e.clientY));
     window.addEventListener('mouseup', up);
