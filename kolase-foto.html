@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kolase Foto</title>
+<title>Photo Collage</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
@@ -18,8 +17,8 @@
     --safelight:#e0483e;
     --safelight-dim:#7a2b26;
   }
-  *{box-sizing:border-box;}
-  body{
+  .kolase-app-wrapper, .kolase-app-wrapper *{box-sizing:border-box;}
+  .kolase-app-wrapper{
     margin:0;
     background:var(--void);
     color:var(--ink);
@@ -253,15 +252,16 @@
     margin-top:10px;
     line-height:1.6;
   }
-  input[type=file]{display:none;}
+  .kolase-app-wrapper input[type=file]{display:none;}
 </style>
 </head>
 <body>
+<div class="kolase-app-wrapper">
 <div class="app">
 
   <div class="head">
-    <h1>Kolase<span>.</span>Foto</h1>
-    <div class="frame-counter">TERISI<b id="filledCount">00 / 04</b></div>
+    <h1>Photo<span>.</span>Collage</h1>
+    <div class="frame-counter">FILLED<b id="filledCount">00 / 04</b></div>
   </div>
 
   <div class="sprocket" id="sprocketTop"></div>
@@ -270,25 +270,25 @@
 
   <div class="controls">
     <div class="ctrl">
-      <label>Rasio Kanvas</label>
+      <label>Canvas Ratio</label>
       <select id="ratioSelect">
-        <option value="1/1">Persegi 1:1</option>
-        <option value="4/5">Potret 4:5</option>
+        <option value="1/1">Square 1:1</option>
+        <option value="4/5">Portrait 4:5</option>
         <option value="9/16">Story 9:16</option>
-        <option value="16/9">Lebar 16:9</option>
-        <option value="3/2">Klasik 3:2</option>
+        <option value="16/9">Wide 16:9</option>
+        <option value="3/2">Classic 3:2</option>
       </select>
     </div>
     <div class="ctrl">
-      <label>Jarak / Gap</label>
+      <label>Spacing / Gap</label>
       <input type="range" id="gapRange" min="0" max="30" value="8">
     </div>
     <div class="ctrl">
-      <label>Sudut Bingkai</label>
+      <label>Corner Radius</label>
       <input type="range" id="radiusRange" min="0" max="40" value="0">
     </div>
     <div class="ctrl">
-      <label>Warna Latar</label>
+      <label>Background Color</label>
       <input type="color" id="bgColor" value="#eee7d8">
     </div>
   </div>
@@ -305,17 +305,18 @@
   <div class="sprocket" id="sprocketBottom"></div>
 
   <div class="actions">
-    <button class="primary" id="downloadBtn">Unduh PNG</button>
-    <button class="ghost" id="resetBtn">Kosongkan Semua</button>
+    <button class="primary" id="downloadBtn">Download PNG</button>
+    <button class="ghost" id="resetBtn">Clear All</button>
   </div>
 
   <p class="hint">
-    Klik kotak kosong untuk unggah foto. Di foto yang sudah terisi: <b>drag</b> untuk geser posisi,
-    <b>scroll mouse</b> (di laptop/PC) atau <b>cubit dua jari / pinch</b> (di HP) langsung di atas foto untuk zoom in-out.
-    Klik sekali pada foto juga menampilkan slider zoom sebagai alternatif. Semua proses berjalan di browser — foto tidak diunggah ke server mana pun.
+    Click an empty box to upload a photo. On a photo that's already added: <b>drag</b> to reposition it,
+    <b>scroll the mouse wheel</b> (on desktop) or <b>pinch with two fingers</b> (on mobile) directly over the photo to zoom in/out.
+    A single click on a photo also reveals a zoom slider as an alternative. Everything runs in your browser — photos are never uploaded to any server.
   </p>
 
   <input type="file" id="fileInput" accept="image/*">
+</div>
 </div>
 
 <script>
@@ -323,14 +324,14 @@
   // ---------- layout definitions (fractional rects x,y,w,h) ----------
   const LAYOUTS = [
     {name:"1", rects:[{x:0,y:0,w:1,h:1}]},
-    {name:"2 Kolom", rects:[{x:0,y:0,w:.5,h:1},{x:.5,y:0,w:.5,h:1}]},
-    {name:"2 Baris", rects:[{x:0,y:0,w:1,h:.5},{x:0,y:.5,w:1,h:.5}]},
+    {name:"2 Columns", rects:[{x:0,y:0,w:.5,h:1},{x:.5,y:0,w:.5,h:1}]},
+    {name:"2 Rows", rects:[{x:0,y:0,w:1,h:.5},{x:0,y:.5,w:1,h:.5}]},
     {name:"2x2", rects:[{x:0,y:0,w:.5,h:.5},{x:.5,y:0,w:.5,h:.5},{x:0,y:.5,w:.5,h:.5},{x:.5,y:.5,w:.5,h:.5}]},
-    {name:"3 Kolom", rects:[{x:0,y:0,w:1/3,h:1},{x:1/3,y:0,w:1/3,h:1},{x:2/3,y:0,w:1/3,h:1}]},
-    {name:"Besar+2", rects:[{x:0,y:0,w:.6,h:1},{x:.6,y:0,w:.4,h:.5},{x:.6,y:.5,w:.4,h:.5}]},
-    {name:"2+Besar", rects:[{x:0,y:0,w:.4,h:.5},{x:0,y:.5,w:.4,h:.5},{x:.4,y:0,w:.6,h:1}]},
+    {name:"3 Columns", rects:[{x:0,y:0,w:1/3,h:1},{x:1/3,y:0,w:1/3,h:1},{x:2/3,y:0,w:1/3,h:1}]},
+    {name:"Big+2", rects:[{x:0,y:0,w:.6,h:1},{x:.6,y:0,w:.4,h:.5},{x:.6,y:.5,w:.4,h:.5}]},
+    {name:"2+Big", rects:[{x:0,y:0,w:.4,h:.5},{x:0,y:.5,w:.4,h:.5},{x:.4,y:0,w:.6,h:1}]},
     {name:"3x3", rects:(()=>{const r=[];for(let i=0;i<3;i++)for(let j=0;j<3;j++)r.push({x:j/3,y:i/3,w:1/3,h:1/3});return r;})()},
-    {name:"1+3 Bawah", rects:[{x:0,y:0,w:1,h:.65},{x:0,y:.65,w:1/3,h:.35},{x:1/3,y:.65,w:1/3,h:.35},{x:2/3,y:.65,w:1/3,h:.35}]},
+    {name:"1+3 Bottom", rects:[{x:0,y:0,w:1,h:.65},{x:0,y:.65,w:1/3,h:.35},{x:1/3,y:.65,w:1/3,h:.35},{x:2/3,y:.65,w:1/3,h:.35}]},
   ];
 
   let currentLayoutIdx = 3;
@@ -446,7 +447,7 @@
       } else {
         const mark = document.createElement('div');
         mark.className = 'empty-mark';
-        mark.textContent = '+ TAMBAH FOTO';
+        mark.textContent = '+ ADD PHOTO';
         div.appendChild(mark);
       }
 
@@ -639,7 +640,7 @@
     });
 
     const link = document.createElement('a');
-    link.download = 'kolase-foto.png';
+    link.download = 'photo-collage.png';
     link.href = canvas.toDataURL('image/png');
     link.click();
   });
