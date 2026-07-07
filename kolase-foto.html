@@ -658,6 +658,24 @@
 
   buildLayoutGrid();
   rebuildSlots();
+
+  // ---- auto-resize support for iframe embedding ----
+  // Reports this widget's real height to the parent page (e.g. a Blogger post)
+  // so the iframe can be resized to fit exactly, with no internal scrollbar.
+  function reportHeightToParent(){
+    if(window.parent === window) return; // not inside an iframe, nothing to do
+    const wrapper = document.querySelector('.kolase-app-wrapper');
+    const h = wrapper ? wrapper.scrollHeight : document.body.scrollHeight;
+    window.parent.postMessage({ type: 'kolase-collage-resize', height: h + 4 }, '*');
+  }
+  window.addEventListener('load', reportHeightToParent);
+  window.addEventListener('resize', reportHeightToParent);
+  const kolaseWrapperEl = document.querySelector('.kolase-app-wrapper');
+  if(window.ResizeObserver && kolaseWrapperEl){
+    new ResizeObserver(reportHeightToParent).observe(kolaseWrapperEl);
+  } else {
+    setInterval(reportHeightToParent, 500); // fallback for very old browsers
+  }
 })();
 </script>
 </body>
