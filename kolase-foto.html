@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kolase Foto</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+  :root{
+    --void:#141311;
+    --panel:#1c1b18;
+    --paper:#eee7d8;
+    --ink:#eee7d8;
+    --muted:#8a8375;
+    --line:#332f28;
+    --safelight:#e0483e;
+    --safelight-dim:#7a2b26;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--void);
+    color:var(--ink);
+    font-family:'JetBrains Mono',monospace;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{
+    max-width:1080px;
+    margin:0 auto;
+    padding:18px 14px 32px;
+  }
+  .head{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    border-bottom:2px solid var(--line);
+    padding-bottom:10px;
+    margin-bottom:16px;
+  }
+  .head h1{
+    font-family:'Oswald',sans-serif;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:2px;
+    font-size:clamp(22px,4vw,32px);
+    margin:0;
+  }
+  .head h1 span{color:var(--safelight);}
+  .frame-counter{
+    font-size:12px;
+    letter-spacing:1px;
+    color:var(--muted);
+    text-align:right;
+  }
+  .frame-counter b{
+    display:block;
+    color:var(--safelight);
+    font-size:20px;
+    font-family:'Oswald',sans-serif;
+  }
+
+  .sprocket{
+    display:flex;
+    gap:6px;
+    padding:6px 0;
+    overflow:hidden;
+  }
+  .sprocket div{
+    width:10px;height:14px;
+    background:var(--line);
+    border-radius:2px;
+    flex-shrink:0;
+  }
+
+  .layout-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:8px;
+    margin-bottom:14px;
+  }
+  @media(min-width:720px){
+    .layout-grid{grid-template-columns:repeat(5,1fr);}
+  }
+  .layout-btn{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:8px;
+    cursor:pointer;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    color:var(--muted);
+    font-size:9px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+  }
+  .layout-btn.active{
+    border-color:var(--safelight);
+    color:var(--ink);
+  }
+  .layout-thumb{
+    position:relative;
+    width:44px;height:44px;
+    background:var(--void);
+  }
+  .layout-thumb i{
+    position:absolute;
+    background:var(--line);
+    border-radius:1px;
+  }
+  .layout-btn.active .layout-thumb i{background:var(--safelight-dim);}
+
+  .controls{
+    display:flex;
+    flex-wrap:wrap;
+    gap:18px;
+    padding:12px 14px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:6px;
+    margin-bottom:16px;
+  }
+  .ctrl{display:flex;flex-direction:column;gap:4px;min-width:120px;flex:1;}
+  .ctrl label{
+    font-size:10px;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+  .ctrl input[type=range]{accent-color:var(--safelight);width:100%;}
+  .ctrl select, .ctrl input[type=color]{
+    background:var(--void);
+    border:1px solid var(--line);
+    color:var(--ink);
+    padding:6px;
+    border-radius:4px;
+    font-family:inherit;
+    font-size:12px;
+  }
+
+  .stage-wrap{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:10px;
+  }
+  #stage{
+    position:relative;
+    width:100%;
+    background:var(--paper);
+    margin:0 auto;
+    overflow:hidden;
+    border-radius:2px;
+  }
+  .slot{
+    position:absolute;
+    overflow:hidden;
+    background:#d8d0bd;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .slot canvas{
+    position:absolute;
+    top:0;left:0;
+    width:100%;height:100%;
+    touch-action:none;
+  }
+  .slot .empty-mark{
+    font-size:11px;
+    color:#9c9376;
+    letter-spacing:1px;
+    text-align:center;
+    pointer-events:none;
+  }
+  .slot.active{outline:2px solid var(--safelight); outline-offset:-2px;}
+  .slot .tag{
+    position:absolute;
+    top:4px;left:4px;
+    font-size:9px;
+    background:rgba(20,19,17,.65);
+    color:var(--ink);
+    padding:2px 5px;
+    border-radius:2px;
+    pointer-events:none;
+    letter-spacing:1px;
+  }
+  .slot .rm{
+    position:absolute;
+    top:4px;right:4px;
+    width:18px;height:18px;
+    background:rgba(20,19,17,.75);
+    color:var(--ink);
+    border-radius:2px;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    font-size:12px;
+    line-height:1;
+  }
+  .slot.active .rm{display:flex;}
+
+  .zoom-bar{
+    display:none;
+    align-items:center;
+    gap:10px;
+    margin-top:10px;
+    padding:8px 12px;
+    background:var(--void);
+    border:1px solid var(--line);
+    border-radius:4px;
+    font-size:10px;
+    letter-spacing:1px;
+    color:var(--muted);
+  }
+  .zoom-bar.show{display:flex;}
+  .zoom-bar input{flex:1;accent-color:var(--safelight);}
+
+  .actions{
+    display:flex;
+    gap:10px;
+    margin-top:16px;
+    flex-wrap:wrap;
+  }
+  button.primary, button.ghost{
+    font-family:'Oswald',sans-serif;
+    text-transform:uppercase;
+    letter-spacing:1.5px;
+    font-weight:600;
+    font-size:13px;
+    padding:12px 22px;
+    border-radius:4px;
+    cursor:pointer;
+    border:1px solid var(--line);
+  }
+  button.primary{
+    background:var(--safelight);
+    color:#1a0f0d;
+    border-color:var(--safelight);
+  }
+  button.ghost{
+    background:transparent;
+    color:var(--ink);
+  }
+  .hint{
+    font-size:11px;
+    color:var(--muted);
+    margin-top:10px;
+    line-height:1.6;
+  }
+  input[type=file]{display:none;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="head">
+    <h1>Kolase<span>.</span>Foto</h1>
+    <div class="frame-counter">TERISI<b id="filledCount">00 / 04</b></div>
+  </div>
+
+  <div class="sprocket" id="sprocketTop"></div>
+
+  <div class="layout-grid" id="layoutGrid"></div>
+
+  <div class="controls">
+    <div class="ctrl">
+      <label>Rasio Kanvas</label>
+      <select id="ratioSelect">
+        <option value="1/1">Persegi 1:1</option>
+        <option value="4/5">Potret 4:5</option>
+        <option value="9/16">Story 9:16</option>
+        <option value="16/9">Lebar 16:9</option>
+        <option value="3/2">Klasik 3:2</option>
+      </select>
+    </div>
+    <div class="ctrl">
+      <label>Jarak / Gap</label>
+      <input type="range" id="gapRange" min="0" max="30" value="8">
+    </div>
+    <div class="ctrl">
+      <label>Sudut Bingkai</label>
+      <input type="range" id="radiusRange" min="0" max="40" value="0">
+    </div>
+    <div class="ctrl">
+      <label>Warna Latar</label>
+      <input type="color" id="bgColor" value="#eee7d8">
+    </div>
+  </div>
+
+  <div class="stage-wrap">
+    <div id="stage"></div>
+    <div class="zoom-bar" id="zoomBar">
+      <span>ZOOM</span>
+      <input type="range" id="zoomRange" min="100" max="300" value="100">
+      <span id="zoomVal">100%</span>
+    </div>
+  </div>
+
+  <div class="sprocket" id="sprocketBottom"></div>
+
+  <div class="actions">
+    <button class="primary" id="downloadBtn">Unduh PNG</button>
+    <button class="ghost" id="resetBtn">Kosongkan Semua</button>
+  </div>
+
+  <p class="hint">
+    Klik kotak kosong untuk unggah foto. Klik foto yang sudah terisi untuk menggeser (drag) posisi
+    dan mengatur zoom. Semua proses berjalan di browser — foto tidak diunggah ke server mana pun.
+  </p>
+
+  <input type="file" id="fileInput" accept="image/*">
+</div>
+
+<script>
+(function(){
+  // ---------- layout definitions (fractional rects x,y,w,h) ----------
+  const LAYOUTS = [
+    {name:"1", rects:[{x:0,y:0,w:1,h:1}]},
+    {name:"2 Kolom", rects:[{x:0,y:0,w:.5,h:1},{x:.5,y:0,w:.5,h:1}]},
+    {name:"2 Baris", rects:[{x:0,y:0,w:1,h:.5},{x:0,y:.5,w:1,h:.5}]},
+    {name:"2x2", rects:[{x:0,y:0,w:.5,h:.5},{x:.5,y:0,w:.5,h:.5},{x:0,y:.5,w:.5,h:.5},{x:.5,y:.5,w:.5,h:.5}]},
+    {name:"3 Kolom", rects:[{x:0,y:0,w:1/3,h:1},{x:1/3,y:0,w:1/3,h:1},{x:2/3,y:0,w:1/3,h:1}]},
+    {name:"Besar+2", rects:[{x:0,y:0,w:.6,h:1},{x:.6,y:0,w:.4,h:.5},{x:.6,y:.5,w:.4,h:.5}]},
+    {name:"2+Besar", rects:[{x:0,y:0,w:.4,h:.5},{x:0,y:.5,w:.4,h:.5},{x:.4,y:0,w:.6,h:1}]},
+    {name:"3x3", rects:(()=>{const r=[];for(let i=0;i<3;i++)for(let j=0;j<3;j++)r.push({x:j/3,y:i/3,w:1/3,h:1/3});return r;})()},
+    {name:"1+3 Bawah", rects:[{x:0,y:0,w:1,h:.65},{x:0,y:.65,w:1/3,h:.35},{x:1/3,y:.65,w:1/3,h:.35},{x:2/3,y:.65,w:1/3,h:.35}]},
+  ];
+
+  let currentLayoutIdx = 3;
+  let slots = []; // {img, pan:{x,y}, zoom, canvas, ctx}
+  let activeSlot = -1;
+  let gapPx = 8, radiusPx = 0, bgColor = "#eee7d8", ratio = 1;
+
+  const stage = document.getElementById('stage');
+  const layoutGrid = document.getElementById('layoutGrid');
+  const fileInput = document.getElementById('fileInput');
+  const zoomBar = document.getElementById('zoomBar');
+  const zoomRange = document.getElementById('zoomRange');
+  const zoomVal = document.getElementById('zoomVal');
+  const filledCount = document.getElementById('filledCount');
+
+  function buildSprockets(){
+    ['sprocketTop','sprocketBottom'].forEach(id=>{
+      const el = document.getElementById(id);
+      el.innerHTML = '';
+      for(let i=0;i<40;i++){ const d=document.createElement('div'); el.appendChild(d); }
+    });
+  }
+  buildSprockets();
+
+  function buildLayoutGrid(){
+    layoutGrid.innerHTML = '';
+    LAYOUTS.forEach((layout, idx)=>{
+      const btn = document.createElement('div');
+      btn.className = 'layout-btn' + (idx===currentLayoutIdx?' active':'');
+      const thumb = document.createElement('div');
+      thumb.className = 'layout-thumb';
+      layout.rects.forEach(r=>{
+        const i = document.createElement('i');
+        i.style.left = (r.x*44+1)+'px';
+        i.style.top = (r.y*44+1)+'px';
+        i.style.width = (r.w*44-2)+'px';
+        i.style.height = (r.h*44-2)+'px';
+        thumb.appendChild(i);
+      });
+      const label = document.createElement('span');
+      label.textContent = layout.name;
+      btn.appendChild(thumb);
+      btn.appendChild(label);
+      btn.onclick = ()=>{ currentLayoutIdx = idx; rebuildSlots(); buildLayoutGrid(); };
+      layoutGrid.appendChild(btn);
+    });
+  }
+
+  function rebuildSlots(){
+    const layout = LAYOUTS[currentLayoutIdx];
+    const oldImages = slots.map(s=>s ? {img:s.img, pan:s.pan, zoom:s.zoom} : null);
+    slots = layout.rects.map((r,i)=>({
+      rect:r, img: oldImages[i]?oldImages[i].img:null,
+      pan: oldImages[i]?oldImages[i].pan:{x:.5,y:.5},
+      zoom: oldImages[i]?oldImages[i].zoom:1,
+      canvas:null, ctx:null
+    }));
+    activeSlot = -1;
+    zoomBar.classList.remove('show');
+    renderStage();
+  }
+
+  function updateFilledCount(){
+    const n = slots.filter(s=>s.img).length;
+    filledCount.textContent = String(n).padStart(2,'0') + ' / ' + String(slots.length).padStart(2,'0');
+  }
+
+  function renderStage(){
+    ratio = eval(document.getElementById('ratioSelect').value);
+    stage.style.aspectRatio = document.getElementById('ratioSelect').value.replace('/', ' / ');
+    stage.style.background = bgColor;
+    stage.innerHTML = '';
+
+    const stageW = stage.clientWidth || 800;
+    const stageH = stageW / ratio;
+
+    slots.forEach((slot, idx)=>{
+      const r = slot.rect;
+      const cellX = r.x*stageW, cellY = r.y*stageH, cellW = r.w*stageW, cellH = r.h*stageH;
+      const fx = cellX + gapPx/2, fy = cellY + gapPx/2;
+      const fw = Math.max(4, cellW - gapPx), fh = Math.max(4, cellH - gapPx);
+
+      const div = document.createElement('div');
+      div.className = 'slot' + (idx===activeSlot?' active':'');
+      div.style.left = fx+'px'; div.style.top = fy+'px';
+      div.style.width = fw+'px'; div.style.height = fh+'px';
+      div.style.borderRadius = radiusPx+'px';
+
+      if(slot.img){
+        const canvas = document.createElement('canvas');
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = fw*dpr; canvas.height = fh*dpr;
+        slot.canvas = canvas; slot.ctx = canvas.getContext('2d');
+        drawSlotToCanvas(slot, canvas.getContext('2d'), fw*dpr, fh*dpr);
+        div.appendChild(canvas);
+
+        const rm = document.createElement('div');
+        rm.className = 'rm'; rm.textContent = '✕';
+        rm.onclick = (e)=>{ e.stopPropagation(); slot.img=null; activeSlot=-1; zoomBar.classList.remove('show'); updateFilledCount(); renderStage(); };
+        div.appendChild(rm);
+
+        attachDrag(div, slot, fw, fh);
+      } else {
+        const mark = document.createElement('div');
+        mark.className = 'empty-mark';
+        mark.textContent = '+ TAMBAH FOTO';
+        div.appendChild(mark);
+      }
+
+      div.onclick = ()=>{
+        if(!slot.img){
+          pendingSlot = idx;
+          fileInput.click();
+        } else {
+          activeSlot = (activeSlot===idx) ? -1 : idx;
+          renderStage();
+          if(activeSlot===idx){
+            zoomBar.classList.add('show');
+            zoomRange.value = Math.round(slots[idx].zoom*100);
+            zoomVal.textContent = zoomRange.value+'%';
+          } else {
+            zoomBar.classList.remove('show');
+          }
+        }
+      };
+      stage.appendChild(div);
+    });
+    updateFilledCount();
+  }
+
+  function drawSlotToCanvas(slot, ctx, destW, destH){
+    ctx.clearRect(0,0,destW,destH);
+    const img = slot.img;
+    const iw = img.naturalWidth, ih = img.naturalHeight;
+    const baseScale = Math.max(destW/iw, destH/ih);
+    const scale = baseScale * slot.zoom;
+    const sw = destW/scale, sh = destH/scale;
+    let cx = slot.pan.x*iw, cy = slot.pan.y*ih;
+    let sx = Math.max(0, Math.min(iw-sw, cx-sw/2));
+    let sy = Math.max(0, Math.min(ih-sh, cy-sh/2));
+    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, destW, destH);
+  }
+
+  function attachDrag(div, slot, fw, fh){
+    let dragging = false, lastX=0, lastY=0;
+    function down(x,y){ dragging = true; lastX=x; lastY=y; }
+    function move(x,y){
+      if(!dragging) return;
+      const dx = x-lastX, dy = y-lastY;
+      lastX=x; lastY=y;
+      const iw = slot.img.naturalWidth, ih = slot.img.naturalHeight;
+      const baseScale = Math.max(fw/iw, fh/ih);
+      const scale = baseScale*slot.zoom;
+      slot.pan.x -= dx/(scale*iw);
+      slot.pan.y -= dy/(scale*ih);
+      slot.pan.x = Math.max(0,Math.min(1,slot.pan.x));
+      slot.pan.y = Math.max(0,Math.min(1,slot.pan.y));
+      const dpr = window.devicePixelRatio||1;
+      drawSlotToCanvas(slot, slot.ctx, fw*dpr, fh*dpr);
+    }
+    function up(){ dragging = false; }
+    div.addEventListener('mousedown', e=>{ e.stopPropagation(); down(e.clientX, e.clientY); });
+    window.addEventListener('mousemove', e=> move(e.clientX, e.clientY));
+    window.addEventListener('mouseup', up);
+    div.addEventListener('touchstart', e=>{ e.stopPropagation(); const t=e.touches[0]; down(t.clientX,t.clientY); }, {passive:true});
+    div.addEventListener('touchmove', e=>{ const t=e.touches[0]; move(t.clientX,t.clientY); }, {passive:true});
+    div.addEventListener('touchend', up);
+  }
+
+  let pendingSlot = -1;
+  fileInput.addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file || pendingSlot<0) return;
+    const reader = new FileReader();
+    reader.onload = ev=>{
+      const img = new Image();
+      img.onload = ()=>{
+        slots[pendingSlot].img = img;
+        slots[pendingSlot].pan = {x:.5,y:.5};
+        slots[pendingSlot].zoom = 1;
+        renderStage();
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+    fileInput.value = '';
+  });
+
+  zoomRange.addEventListener('input', ()=>{
+    if(activeSlot<0) return;
+    const z = zoomRange.value/100;
+    slots[activeSlot].zoom = z;
+    zoomVal.textContent = zoomRange.value+'%';
+    if(slots[activeSlot].canvas){
+      const dpr = window.devicePixelRatio||1;
+      drawSlotToCanvas(slots[activeSlot], slots[activeSlot].ctx, slots[activeSlot].canvas.width, slots[activeSlot].canvas.height);
+    }
+  });
+
+  document.getElementById('ratioSelect').addEventListener('change', renderStage);
+  document.getElementById('gapRange').addEventListener('input', e=>{ gapPx=+e.target.value; renderStage(); });
+  document.getElementById('radiusRange').addEventListener('input', e=>{ radiusPx=+e.target.value; renderStage(); });
+  document.getElementById('bgColor').addEventListener('input', e=>{ bgColor=e.target.value; renderStage(); });
+  document.getElementById('resetBtn').addEventListener('click', ()=>{ rebuildSlots(); });
+  window.addEventListener('resize', renderStage);
+
+  document.getElementById('downloadBtn').addEventListener('click', ()=>{
+    const outW = 1400;
+    const outH = Math.round(outW/ratio);
+    const canvas = document.createElement('canvas');
+    canvas.width = outW; canvas.height = outH;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0,0,outW,outH);
+
+    const scaleFactor = outW / (stage.clientWidth||800);
+    const scaledGap = gapPx*scaleFactor;
+    const scaledRadius = radiusPx*scaleFactor;
+
+    slots.forEach(slot=>{
+      const r = slot.rect;
+      const cellX = r.x*outW, cellY = r.y*outH, cellW = r.w*outW, cellH = r.h*outH;
+      const fx = cellX+scaledGap/2, fy = cellY+scaledGap/2;
+      const fw = Math.max(2,cellW-scaledGap), fh = Math.max(2,cellH-scaledGap);
+      if(!slot.img) return;
+
+      ctx.save();
+      roundRectPath(ctx, fx, fy, fw, fh, scaledRadius);
+      ctx.clip();
+
+      const img = slot.img;
+      const iw = img.naturalWidth, ih = img.naturalHeight;
+      const baseScale = Math.max(fw/iw, fh/ih);
+      const scale = baseScale*slot.zoom;
+      const sw = fw/scale, sh = fh/scale;
+      let cx = slot.pan.x*iw, cy = slot.pan.y*ih;
+      let sx = Math.max(0, Math.min(iw-sw, cx-sw/2));
+      let sy = Math.max(0, Math.min(ih-sh, cy-sh/2));
+      ctx.drawImage(img, sx, sy, sw, sh, fx, fy, fw, fh);
+      ctx.restore();
+    });
+
+    const link = document.createElement('a');
+    link.download = 'kolase-foto.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  });
+
+  function roundRectPath(ctx,x,y,w,h,r){
+    r = Math.min(r, w/2, h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);
+    ctx.arcTo(x,y,x+w,y,r);
+    ctx.closePath();
+  }
+
+  buildLayoutGrid();
+  rebuildSlots();
+})();
+</script>
+</body>
+</html>
